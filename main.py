@@ -1,90 +1,150 @@
-# import os
-# import requests
-# import re
-# import pandas as pd
+import csv
+import requests
+import re
+from Bio.PDB.PDBParser import PDBParser
+import os
 
-# from Bio.PDB.MMCIF2Dict import MMCIF2Dict
+
+# user interface for user to enter protein name and proteopedia site url
+def get_user_input():
+    protein_name = input("Enter protein name: ")
+    url = input("Enter Proteopedia site url: ")
+    return protein_name, url
 
 
-# def check_valid_name(protein_name):
-#     # check that protein name is not empty
-#     if protein_name == "":
-#         print("Please enter a protein name")
-#         return 0
-#     # check that protein name is not a number
-#     elif protein_name.isdigit():
-#         print("Please enter a valid protein name")
-#         return 0
-#     # check that protein name is not a special character
-#     elif not protein_name.isalpha():
-#         print("Please enter a valid protein name")
-#         return 0
-#         # check that protein name is not a space
-#     elif protein_name.isspace():
-#         print("Please enter a valid protein name")
-#         return 0
-#         # check that protein name exists in PDB
-#     elif not Query(protein_name).search():
-#         print(" Protein not found in PDB")
-#         return 0
-#     # if all checks pass, return protein name
-#     else:
-#         return 1
-#
-#
-c
-#
-#
-# def common_percent(list1, list2):
-#     common = len(set(list1).intersection(list2))
-#     total = len(set(list1).union(list2))
-#     return common / total * 100
-#
-#
-# def check_compound_for_name(protein_id, protein_name):
-#     # get pdb file from PDB
-#     pdb_file = requests.get(f"https://files.rcsb.org/download/{protein_id}.pdb")
-#     # save pdb file
-#     with open(f"{protein_id}.pdb", "wb") as f:
-#         f.write(pdb_file.content)
-#     # parse pdb file
-#     parser = PDBParser(PERMISSIVE=1)
-#     structure = parser.get_structure(protein_id, f"{protein_id}.pdb")
-#     # get compound name from pdb file
-#     compound = structure.header["compound"]
-#     # compound is a dictionary of dictionaries
-#     # loop through the keys of the compound dictionary
-#     for key in compound:
-#         try:
-#             # get the compound name
-#             compound_molecule = compound[key]["molecule"].split(",")
-#             # if any element in the list is contains "PROTEIN_NAME" then return true
-#             if any(protein_name in element for element in compound_molecule):
-#                 # remove pdb file
-#                 os.remove(f"{protein_id}.pdb")
-#                 return 1
-#             # try if any element in the list contains "PROTEIN_NAME" then return true
-#             # check for each subdictionary in compound to see if it contains key "synonym"
-#             elif "synonym" in compound[key]:
-#                 # get the synonyms
-#                 compound_synonym = compound[key]["synonym"].split(",")
-#                 # if any element in the list is contains "PROTEIN_NAME" then return true
-#                 if any(protein_name in element for element in compound_synonym):
-#                     # remove pdb file
-#                     os.remove(f"{protein_id}.pdb")
-#                     return 1
-#         except KeyError:
-#             continue
-#     # if no compound name is found, return false
-#     # remove pdb file
-#     os.remove(f"{protein_id}.pdb")
-#     return 0
-#
-#
+# using BeautifulSoup to extract IdS from proteopedia site
+def extract_IDs_Proteopedia(html):
+    # try two different pattern matches
+    # pattern 1
+    pattern = r'title=\\"([a-zA-Z0-9]{4})\\">'
+    matches = re.finditer(pattern, html)
+    # if matches not empty, return list of ids
+    ids = [match.group(1).upper() for match in matches]
+    if ids:
+        # return without duplicates
+        return list(set(ids))
+    # pattern 2
+    else:
+        pattern = r'<a href=".*?" title="([a-zA-Z0-9]{4})">\1</a>'
+        matches = re.finditer(pattern, html)
+        ids = [match.group(1).upper() for match in matches]
+        return list(set(ids))
 
-#     # make list of tuple of id and if it contains the protein name
-#     pdb_list = [(pdb_id, check_compound_for_name(pdb_id, protein)) for pdb_id in PDB_list]
-#     # make list of ids that dont contain the protein name
-#     pdb_list = [pdb_id for pdb_id, contains_name in pdb_list if contains_name == 0]
-#     print("Number of PDB IDs that do not contain the protein name: ", len(pdb_list))
-#     print("Number of Proteopedia IDs that do not contain the protein name: ", len(proteo_list))
+
+def extract_IDs_PDB(response):
+    # for every "identifier: " in the response, extract the id
+    pattern = r'"identifier" : "([a-zA-Z0-9]{4})",'
+    matches = re.finditer(pattern, response)
+    ids = [match.group(1).upper() for match in matches]
+    return ids
+
+
+def PDB_search(protein_name):
+    # search PDB for protein name
+    url = 'https://search.rcsb.org/rcsbsearch/v2/query?json='
+    query = '{"query":{"type":"group","nodes":[{"type":"terminal","service":"text","parameters":{' \
+            '"attribute":"rcsb_uniprot_protein.name.value","operator":"contains_phrase","negation":false,' \
+            '"value":"protein_name"}},{"type":"terminal","service":"text","parameters":{"attribute":"struct.title",' \
+            '"operator":"contains_words","negation":false,"value":"protein_name"}}],"logical_operator":"or",' \
+            '"label":"text"},"return_type":"entry","request_options":{"return_all_hits":true,"results_content_type":[' \
+            '"experimental"],"sort":[{"sort_by":"score","direction":"desc"}],"scoring_strategy":"combined"}}'
+
+    # replace protein name in query
+    query = query.replace("protein_name", protein_name.capitalize())
+    # send request
+    response = requests.get(url + query)
+    # extract ids from response
+    ids = extract_IDs_PDB(response.text)
+    return ids
+
+
+def find_PDB_only(ids_PDB, ids_Proteopedia):
+    # find PDB ids that are in PDB but not in proteopedia
+    # compare ids
+    print("IDs in Proteopedia but not in PDB:")
+    for id in proteopedia_IDS:
+        if id.upper() not in PDB_IDs:
+            print(id)
+    i = 0
+    for id in PDB_IDs:
+        if id not in proteopedia_IDS:
+            i += 1
+    print("Number of IDs in PDB but not in Proteopedia: " + str(i))
+    return list(set(ids_PDB) - set(ids_Proteopedia))
+
+
+def validate_PDB_IDs(list_of_IDs, protein_name):
+    # iterate through list_of_IDs and validate each id
+    # if id is valid, add to valid_ids list of tuples (id, word)
+    valid_ids = []
+    flag = False
+    # get pdb file from PDB
+    for id in list_of_IDs:
+        pdb_file = requests.get(f"https://files.rcsb.org/download/{id}.pdb")
+        if pdb_file.status_code == 200:
+            with open(f"{id}.pdb", "wb") as f:
+                f.write(pdb_file.content)
+                # parse pdb file
+                parser = PDBParser(PERMISSIVE=1)
+                structure = parser.get_structure(id, f"{id}.pdb")
+                # search for protein name in Header, Title, COMPND
+                TITLE = structure.header['name']
+                # find date that protein was added to PDB
+                date = structure.header['release_date']
+                # check if protein name is in title without regard to capital letters
+                if protein_name.lower() in TITLE.lower():
+                    valid_ids.append((id, TITLE, date))
+                    # remove pdb file
+                    os.remove(f"{id}.pdb")
+                    continue
+                COMPND = structure.header['compound']
+                for key in COMPND:
+                    # split compound molecule into words
+                    words = COMPND[key]['molecule'].split(",")
+                    for word in words:
+                        if protein_name.lower() in word.lower():
+                            valid_ids.append((id, words, date))
+                            flag = True
+                            break
+                    if flag:
+                        break
+                    if 'synonym' in COMPND[key]:
+                        # check if dict has key 'synonym'
+                        # split synonyms into words
+                        synonyms = COMPND[key]['synonym'].split(",")
+                        for syn in synonyms:
+                            if protein_name.lower() in syn.lower():
+                                valid_ids.append((id, synonyms, date))
+                                break
+                flag = False
+                # remove pdb file
+                os.remove(f"{id}.pdb")
+                continue
+        else:
+            print(f"ID {id} is not valid")
+    return valid_ids
+
+
+if __name__ == "__main__":
+    # get user input
+    protein_name, url = get_user_input()
+    # get html from url
+    html = requests.get(url).text
+    # extract ids from Proteopedia site
+    proteopedia_IDS = extract_IDs_Proteopedia(html)
+    print(f'{protein_name} IDs on Proteopedia: ' + f"{len(proteopedia_IDS)}")
+    # get html from PDB
+    PDB_IDs = PDB_search(protein_name)
+    print(f'{protein_name} IDs on PDB: ' + f"{len(PDB_IDs)}")
+    PDB_only = find_PDB_only(PDB_IDs, proteopedia_IDS)
+    if PDB_only:
+        valid_ids = validate_PDB_IDs(PDB_only, protein_name)
+        print(f' New valid {protein_name} IDs on PDB: ' + f"{len(valid_ids)}")
+        print(valid_ids)
+        # create csv file with columns ID, Title, date
+        with open(f"{protein_name}_IDs.csv", "w", newline="") as f:
+            writer = csv.writer(f)
+            writer.writerow(["ID", "Title", "Date"])
+            writer.writerows(valid_ids)
+    else:
+        print("No new IDs on PDB")
