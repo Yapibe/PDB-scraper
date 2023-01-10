@@ -142,7 +142,7 @@ if __name__ == "__main__":
         print(f' New valid {protein_name} IDs on PDB: ' + f"{len(valid_ids)}")
         print(valid_ids)
         # create csv file with columns ID, Title, date
-        with open(f"{protein_name}_IDs.csv", "w", newline="") as f:
+        with open(f"{protein_name.capitalize()}_IDs.csv", "w", newline="") as f:
             writer = csv.writer(f)
             writer.writerow(["ID", "Title", "Date"])
             writer.writerows(valid_ids)
