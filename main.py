@@ -8,6 +8,8 @@ import os
 # user interface for user to enter protein name and proteopedia site url
 def get_user_input():
     protein_name = input("Enter protein name: ")
+    if protein_name == "":
+        return -1, -1
     url = input("Enter Proteopedia site url: ")
     return protein_name, url
 
@@ -61,7 +63,7 @@ def PDB_search(protein_name):
 def find_PDB_only(ids_PDB, ids_Proteopedia):
     # find PDB ids that are in PDB but not in proteopedia
     # compare ids
-    print("IDs in Proteopedia but not in PDB:")
+    print("These IDs are in Proteopedia but not in PDB:")
     for id in proteopedia_IDS:
         if id.upper() not in PDB_IDs:
             print(id)
@@ -95,6 +97,7 @@ def validate_PDB_IDs(list_of_IDs, protein_name):
                 if protein_name.lower() in TITLE.lower():
                     valid_ids.append((id, TITLE, date))
                     # remove pdb file
+                    f.close()
                     os.remove(f"{id}.pdb")
                     continue
                 COMPND = structure.header['compound']
@@ -118,6 +121,7 @@ def validate_PDB_IDs(list_of_IDs, protein_name):
                                 break
                 flag = False
                 # remove pdb file
+                f.close()
                 os.remove(f"{id}.pdb")
                 continue
         else:
@@ -126,25 +130,32 @@ def validate_PDB_IDs(list_of_IDs, protein_name):
 
 
 if __name__ == "__main__":
-    # get user input
-    protein_name, url = get_user_input()
-    # get html from url
-    html = requests.get(url).text
-    # extract ids from Proteopedia site
-    proteopedia_IDS = extract_IDs_Proteopedia(html)
-    print(f'{protein_name} IDs on Proteopedia: ' + f"{len(proteopedia_IDS)}")
-    # get html from PDB
-    PDB_IDs = PDB_search(protein_name)
-    print(f'{protein_name} IDs on PDB: ' + f"{len(PDB_IDs)}")
-    PDB_only = find_PDB_only(PDB_IDs, proteopedia_IDS)
-    if PDB_only:
-        valid_ids = validate_PDB_IDs(PDB_only, protein_name)
-        print(f' New valid {protein_name} IDs on PDB: ' + f"{len(valid_ids)}")
-        print(valid_ids)
-        # create csv file with columns ID, Title, date
-        with open(f"{protein_name.capitalize()}_IDs.csv", "w", newline="") as f:
-            writer = csv.writer(f)
-            writer.writerow(["ID", "Title", "Date"])
-            writer.writerows(valid_ids)
-    else:
-        print("No new IDs on PDB")
+    while True:
+        # get user input
+        protein_name, url = get_user_input()
+        # if user enters '', exit program
+        if protein_name == -1:
+            break
+        # get html from url
+        html = requests.get(url).text
+        # extract ids from Proteopedia site
+        proteopedia_IDS = extract_IDs_Proteopedia(html)
+        print(f'{protein_name} IDs on Proteopedia: ' + f"{len(proteopedia_IDS)}")
+        # get html from PDB
+        PDB_IDs = PDB_search(protein_name)
+        print(f'{protein_name} IDs on PDB: ' + f"{len(PDB_IDs)}")
+        PDB_only = find_PDB_only(PDB_IDs, proteopedia_IDS)
+        if PDB_only:
+            valid_ids = validate_PDB_IDs(PDB_only, protein_name)
+            print(f'New valid {protein_name} IDs on PDB: ' + f"{len(valid_ids)}")
+            print(valid_ids)
+            # create csv file with columns ID, Title, date
+            with open(f"{protein_name}_ID's.csv", "w", newline="") as f:
+                writer = csv.writer(f)
+                writer.writerow(["ID", "Title", "Date"])
+                writer.writerows(valid_ids)
+            # close file
+            f.close()
+        else:
+            print("No new IDs on PDB")
+
