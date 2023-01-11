@@ -16,8 +16,8 @@ How does it run: <br>
     Obscurin IDs on PDB: 35
     These IDs are in Proteopedia but not in PDB:
     Number of IDs in PDB but not in Proteopedia: 3
-    From the list of IDs that are only found in the PDB search, the program will go through each PDB file and search the TITLE and COMPOUND (Molecule first, then Synonyms) for the protein name.
     ```
+    From the list of IDs that are only found in the PDB search, the program will go through each PDB file and search the TITLE and COMPOUND (Molecule first, then Synonyms) for the protein name.
 
 4. The program will create a CSV file of the following format: (ID, sentence from file that triggered inclusion, release date).
 5. Exiting the program <br>

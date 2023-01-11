@@ -1,7 +1,7 @@
 import csv
 import requests
 import re
-from Bio.PDB.PDBParser import PDBParser
+import Bio.PDB.MMCIF2Dict
 import os
 
 
@@ -104,56 +104,44 @@ def validate_PDB_IDs(list_of_PDB_IDs, protein):
     :return: list of validated IDs
     """
     validated_ids = []
-    flag = False
     # get pdb file from PDB
     for struct_id in list_of_PDB_IDs:
-        pdb_file = requests.get(f"https://files.rcsb.org/download/{struct_id}.pdb")
+        pdb_file = requests.get(f"https://files.rcsb.org/header/{struct_id}.cif")
         if pdb_file.status_code == 200:
-            with open(str(f"{struct_id}.pdb"), str("wb")) as protein_file:
+            with open(str(f"{struct_id}.cif"), str("wb")) as protein_file:
                 protein_file.write(pdb_file.content)
-                # parse pdb file
-                parser = PDBParser(PERMISSIVE=1)
-                structure = parser.get_structure(str(struct_id), str(f"{struct_id}.pdb"))
-                # search for protein name in Header, Title, COMPND
-                protein_file_title = structure.header['name']
-                # find date that protein was added to PDB
-                protein_file_release_date = structure.header['release_date']
-                # check if protein name is in title without regard to capital letters
-                if protein.lower() in protein_file_title.lower():
-                    validated_ids.append((str(struct_id), str(protein_file_title), str(protein_file_release_date)))
-                    # remove pdb file
-                    protein_file.close()
-                    os.remove(str(f"{struct_id}.pdb"))
+                protein_file_dict = Bio.PDB.MMCIF2Dict.MMCIF2Dict(str(f"{struct_id}.cif"))
+                # check if protein name is in pdb file
+                protein = protein.lower()
+                # check if protein name is in title
+                match = next(filter(lambda x: protein in x, protein_file_dict["_struct.title"]), None)
+                if match:
+                    validated_ids.append((struct_id, match , protein_file_dict["_pdbx_database_status.recvd_initial_deposition_date"]) )
+                    # remove file
+                    os.remove(str(f"{struct_id}.cif"))
                     continue
-                protein_file_compound_dict = structure.header['compound']
-                for compound_dict_key in protein_file_compound_dict:
-                    # split compound molecule into list
-                    protein_file_molecule_list = protein_file_compound_dict[compound_dict_key]['molecule'].split(",")
-                    for word in protein_file_molecule_list:
-                        if protein.lower() in word.lower():
-                            validated_ids.append((str(struct_id), list(protein_file_molecule_list),
-                                                  str(protein_file_release_date)))
-                            flag = True
-                            break
-                    if flag:
-                        break
-                    if 'synonym' in protein_file_compound_dict[compound_dict_key]:
-                        # check if dict has key 'synonym'
-                        # split synonyms into words
-                        protein_file_synonyms = protein_file_compound_dict[compound_dict_key]['synonym'].split(",")
-                        for syn in protein_file_synonyms:
-                            if protein.lower() in syn.lower():
-                                valid_ids.append((str(struct_id), list(protein_file_synonyms),
-                                                  str(protein_file_release_date)))
-                                break
-                flag = False
-                # remove pdb file
-                protein_file.close()
-                os.remove(str(f"{struct_id}.pdb"))
-                continue
-        else:
-            print(f"ID {struct_id} is not valid")
+                # check if protein name is in compound molecule
+                match = next(filter(lambda x: protein in x, protein_file_dict["_entity.pdbx_description"]), None)
+                if match:
+                    validated_ids.append((struct_id, match, protein_file_dict["_pdbx_database_status.recvd_initial_deposition_date"]))
+                    # remove file
+                    os.remove(str(f"{struct_id}.cif"))
+                    continue
+                # check if dict has synonym key
+                if "_entity_name_com.name" in protein_file_dict:
+                    # check if protein name is in synonym
+                    match = next(filter(lambda x: protein in x, protein_file_dict["_entity_name_com.name"]), None)
+                    if match:
+                        validated_ids.append((struct_id, match, protein_file_dict["_pdbx_database_status.recvd_initial_deposition_date"]))
+                        # remove file
+                        os.remove(str(f"{struct_id}.cif"))
+                        continue
+                # name not in file, remove file
+                os.remove(str(f"{struct_id}.cif"))
     return list(validated_ids)
+
+
+
 
 
 if __name__ == "__main__":
