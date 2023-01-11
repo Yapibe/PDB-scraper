@@ -63,13 +63,13 @@ def PDB_search(protein):
     PDB_search_url = 'https://search.rcsb.org/rcsbsearch/v2/query?json='
     query = '{"query":{"type":"group","nodes":[{"type":"terminal","service":"text","parameters":{' \
             '"attribute":"rcsb_uniprot_protein.name.value","operator":"contains_phrase","negation":false,' \
-            '"value":"protein"}},{"type":"terminal","service":"text","parameters":{"attribute":"struct.title",' \
-            '"operator":"contains_words","negation":false,"value":"protein"}}],"logical_operator":"or",' \
+            '"value":"protein_name"}},{"type":"terminal","service":"text","parameters":{"attribute":"struct.title",' \
+            '"operator":"contains_words","negation":false,"value":"protein_name"}}],"logical_operator":"or",' \
             '"label":"text"},"return_type":"entry","request_options":{"return_all_hits":true,"results_content_type":[' \
             '"experimental"],"sort":[{"sort_by":"score","direction":"desc"}],"scoring_strategy":"combined"}}'
 
     # replace protein name in query
-    query = query.replace("protein", protein.capitalize())
+    query = query.replace("protein_name", protein.capitalize())
     # send request
     response = requests.get(str(PDB_search_url + query))
     # extract ids from response
@@ -86,17 +86,14 @@ def find_PDB_only(PDB_IDs, Proteopedia_IDs):
     """
     print("These IDs are in Proteopedia but not in PDB:")
     # turn lists into sets for faster search
-    PDB_IDs_set = set(PDB_IDs)
-    Proteopedia_IDs_set = set(Proteopedia_IDs)
-    for struct_id in Proteopedia_IDs_set:
-        if struct_id.upper() not in PDB_IDs_set:
-            print(struct_id)
-    i = 0
-    for struct_id in PDB_IDs:
-        if struct_id not in Proteopedia_IDs_set:
-            i += 1
-    print("Number of IDs in PDB but not in Proteopedia: " + str(i))
-    return list(PDB_IDs_set - Proteopedia_IDs_set)
+    unique_PDB_IDs = set(PDB_IDs) - set(Proteopedia_IDs)
+    unique_proteopedia_IDs = set(Proteopedia_IDs) - set(PDB_IDs)
+    # print IDs that are in Proteopedia but not in PDB
+    for ID in unique_proteopedia_IDs:
+        print(ID)
+    # print number of IDs that are in PDB but not in Proteopedia
+    print("Number of IDs that are in PDB but not in Proteopedia: " + str(len(unique_PDB_IDs)))
+    return unique_PDB_IDs
 
 
 def validate_PDB_IDs(list_of_PDB_IDs, protein):
@@ -110,10 +107,10 @@ def validate_PDB_IDs(list_of_PDB_IDs, protein):
     flag = False
     # get pdb file from PDB
     for struct_id in list_of_PDB_IDs:
-        pdb_file = requests.get(f"https://files.rcsb.org/download/{id}.pdb")
+        pdb_file = requests.get(f"https://files.rcsb.org/download/{struct_id}.pdb")
         if pdb_file.status_code == 200:
-            with open(str(f"{id}.pdb"), str("wb")) as protein_file:
-                protein_file.write(str(pdb_file.content))
+            with open(str(f"{struct_id}.pdb"), str("wb")) as protein_file:
+                protein_file.write(pdb_file.content)
                 # parse pdb file
                 parser = PDBParser(PERMISSIVE=1)
                 structure = parser.get_structure(str(struct_id), str(f"{struct_id}.pdb"))
@@ -126,7 +123,7 @@ def validate_PDB_IDs(list_of_PDB_IDs, protein):
                     validated_ids.append((str(struct_id), str(protein_file_title), str(protein_file_release_date)))
                     # remove pdb file
                     protein_file.close()
-                    os.remove(str(f"{id}.pdb"))
+                    os.remove(str(f"{struct_id}.pdb"))
                     continue
                 protein_file_compound_dict = structure.header['compound']
                 for compound_dict_key in protein_file_compound_dict:
@@ -152,10 +149,10 @@ def validate_PDB_IDs(list_of_PDB_IDs, protein):
                 flag = False
                 # remove pdb file
                 protein_file.close()
-                os.remove(str(f"{id}.pdb"))
+                os.remove(str(f"{struct_id}.pdb"))
                 continue
         else:
-            print(f"ID {id} is not valid")
+            print(f"ID {struct_id} is not valid")
     return list(validated_ids)
 
 
@@ -176,7 +173,7 @@ if __name__ == "__main__":
         print(f'{protein_name_from_user} IDs on PDB: ' + f"{len(PDB_IDs)}")
         PDB_only = find_PDB_only(list(PDB_IDs), list(proteopedia_IDS))
         if PDB_only:
-            valid_ids = validate_PDB_IDs(list(PDB_only), list(protein_name_from_user))
+            valid_ids = validate_PDB_IDs(list(PDB_only), str(protein_name_from_user))
             print(f'New valid {protein_name_from_user} IDs on PDB: ' + f"{len(valid_ids)}")
             print(valid_ids)
             # create csv file with columns ID, Title, date
