@@ -61,18 +61,70 @@ def PDB_search(protein):
     """
     # search PDB for protein name
     PDB_search_url = 'https://search.rcsb.org/rcsbsearch/v2/query?json='
-    query = '{"query":{"type":"group","logical_operator":"or","nodes":[{"type":"terminal","service":"text"' \
-            ',"parameters":{"attribute":"struct.title","operator":"contains_phrase","negation":false,"value":' \
-            '"protein_name"}},{"type":"terminal","service":"text","parameters":{"attribute":' \
-            '"rcsb_polymer_entity.rcsb_macromolecular_names_combined.name","operator":"contains_phrase",' \
-            '"negation":false,"value":"protein_name"}},{"type":"terminal","label":"text","service":"text",' \
-            '"parameters":{"attribute":"rcsb_polymer_entity.rcsb_macromolecular_names_combined.name","operator":' \
-            '"contains_phrase","negation":false,"value":"protein_name"}}],"label":"text"},"return_type":"entry",' \
-            '"request_options":{"return_all_hits":true,"results_content_type":["experimental"],"sort":[{"sort_by":' \
-            '"score","direction":"desc"}],"scoring_strategy":"combined"}}'
+    query = '{"query":{"type":"group","logical_operator":"and","nodes":[{"type":"group","nodes":[{"type":"terminal",' \
+            '"service":"text","parameters":{"attribute":"struct.title","operator":"contains_phrase","negation":false,' \
+            '"value":"obscurin"}},{"type":"terminal","service":"text","parameters":{' \
+            '"attribute":"rcsb_polymer_entity.rcsb_macromolecular_names_combined.name","operator":"contains_phrase",' \
+            '"negation":false,"value":"obscurin"}},{"type":"terminal","service":"text","parameters":{' \
+            '"attribute":"rcsb_polymer_entity.pdbx_description","operator":"contains_phrase","negation":false,' \
+            '"value":"obscurin"}}],"logical_operator":"or"},{"type":"group","nodes":[{"type":"terminal",' \
+            '"service":"text","parameters":{"attribute":"struct.title","operator":"contains_phrase","negation":true,' \
+            '"value":"obscurin-binding protein"}},{"type":"terminal","service":"text","parameters":{' \
+            '"attribute":"struct.title","operator":"contains_phrase","negation":true,"value":"obscurin peptide"}},' \
+            '{"type":"terminal","service":"text","parameters":{"attribute":"struct.title",' \
+            '"operator":"contains_phrase","negation":true,"value":"peptide from obscurin"}},{"type":"terminal",' \
+            '"service":"text","parameters":{"attribute":"struct.title","operator":"contains_phrase","negation":true,' \
+            '"value":"putative obscurin"}},{"type":"terminal","service":"text","parameters":{' \
+            '"attribute":"struct.title","operator":"contains_phrase","negation":true,"value":"possible obscurin"}},' \
+            '{"type":"terminal","service":"text","parameters":{"attribute":"struct.title",' \
+            '"operator":"contains_phrase","negation":true,"value":"hypothetical obscurin"}},{"type":"terminal",' \
+            '"service":"text","parameters":{"attribute":"struct.title","operator":"contains_phrase","negation":true,' \
+            '"value":"probable obscurin"}},{"type":"terminal","service":"text","parameters":{' \
+            '"attribute":"struct.title","operator":"contains_phrase","negation":true,' \
+            '"value":"obscurin-interacting"}},{"type":"terminal","service":"text","parameters":{' \
+            '"attribute":"struct.title","operator":"contains_phrase","negation":true,"value":"obscurin inhibitor"}},' \
+            '{"type":"terminal","service":"text","parameters":{' \
+            '"attribute":"rcsb_polymer_entity.rcsb_macromolecular_names_combined.name","operator":"contains_phrase",' \
+            '"negation":true,"value":"obscurin-binding protein"}},{"type":"terminal","service":"text","parameters":{' \
+            '"attribute":"rcsb_polymer_entity.rcsb_macromolecular_names_combined.name","operator":"contains_phrase",' \
+            '"negation":true,"value":"obscurin peptide"}},{"type":"terminal","service":"text","parameters":{' \
+            '"attribute":"rcsb_polymer_entity.rcsb_macromolecular_names_combined.name","operator":"contains_phrase",' \
+            '"negation":true,"value":"peptide from obscurin"}},{"type":"terminal","service":"text","parameters":{' \
+            '"attribute":"rcsb_polymer_entity.rcsb_macromolecular_names_combined.name","operator":"contains_phrase",' \
+            '"negation":true,"value":"putative obscurin"}},{"type":"terminal","service":"text","parameters":{' \
+            '"attribute":"rcsb_polymer_entity.rcsb_macromolecular_names_combined.name","operator":"contains_phrase",' \
+            '"negation":true,"value":"possible obscurin"}},{"type":"terminal","service":"text","parameters":{' \
+            '"attribute":"rcsb_polymer_entity.rcsb_macromolecular_names_combined.name","operator":"contains_phrase",' \
+            '"negation":true,"value":"hypothetical obscurin"}},{"type":"terminal","service":"text","parameters":{' \
+            '"attribute":"rcsb_polymer_entity.rcsb_macromolecular_names_combined.name","operator":"contains_phrase",' \
+            '"negation":true,"value":"probable obscurin"}},{"type":"terminal","service":"text","parameters":{' \
+            '"attribute":"rcsb_polymer_entity.rcsb_macromolecular_names_combined.name","operator":"contains_phrase",' \
+            '"negation":true,"value":"obscurin-interacting"}},{"type":"terminal","service":"text","parameters":{' \
+            '"attribute":"rcsb_polymer_entity.rcsb_macromolecular_names_combined.name","operator":"contains_phrase",' \
+            '"negation":true,"value":"obscurin inhibitor"}},{"type":"terminal","service":"text","parameters":{' \
+            '"attribute":"rcsb_polymer_entity.pdbx_description","operator":"contains_phrase","negation":true,' \
+            '"value":"obscurin-binding protein"}},{"type":"terminal","service":"text","parameters":{' \
+            '"attribute":"rcsb_polymer_entity.pdbx_description","operator":"contains_phrase","negation":true,' \
+            '"value":"obscurin peptide"}},{"type":"terminal","service":"text","parameters":{' \
+            '"attribute":"rcsb_polymer_entity.pdbx_description","operator":"contains_phrase","negation":true,' \
+            '"value":"peptide from obscurin"}},{"type":"terminal","service":"text","parameters":{' \
+            '"attribute":"rcsb_polymer_entity.pdbx_description","operator":"contains_phrase","negation":true,' \
+            '"value":"putative obscurin"}},{"type":"terminal","service":"text","parameters":{' \
+            '"attribute":"rcsb_polymer_entity.pdbx_description","operator":"contains_phrase","negation":true,' \
+            '"value":"possible obscurin"}},{"type":"terminal","service":"text","parameters":{' \
+            '"attribute":"rcsb_polymer_entity.pdbx_description","operator":"contains_phrase","negation":true,' \
+            '"value":"hypothetical obscurin"}},{"type":"terminal","service":"text","parameters":{' \
+            '"attribute":"rcsb_polymer_entity.pdbx_description","operator":"contains_phrase","negation":true,' \
+            '"value":"probable obscurin"}},{"type":"terminal","service":"text","parameters":{' \
+            '"attribute":"rcsb_polymer_entity.pdbx_description","operator":"contains_phrase","negation":true,' \
+            '"value":"obscurin-interacting"}},{"type":"terminal","service":"text","parameters":{' \
+            '"attribute":"rcsb_polymer_entity.pdbx_description","operator":"contains_phrase","negation":true,' \
+            '"value":"obscurin inhibitor"}}],"logical_operator":"or"}],"label":"text"},"return_type":"entry",' \
+            '"request_options":{"return_all_hits":true,"results_content_type":["experimental"],' \
+            '"sort":[{"sort_by":"score","direction":"desc"}],"scoring_strategy":"combined"}}'
 
     # replace protein name in query
-    search = query.replace("protein_name", protein.capitalize())
+    search = query.replace("obscurin", protein.capitalize())
     # send request
     response = requests.get(str(PDB_search_url + search))
     # extract ids from response
