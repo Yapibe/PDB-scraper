@@ -61,17 +61,20 @@ def PDB_search(protein):
     """
     # search PDB for protein name
     PDB_search_url = 'https://search.rcsb.org/rcsbsearch/v2/query?json='
-    query = '{"query":{"type":"group","nodes":[{"type":"terminal","service":"text","parameters":{' \
-            '"attribute":"rcsb_uniprot_protein.name.value","operator":"contains_phrase","negation":false,' \
-            '"value":"protein_name"}},{"type":"terminal","service":"text","parameters":{"attribute":"struct.title",' \
-            '"operator":"contains_words","negation":false,"value":"protein_name"}}],"logical_operator":"or",' \
-            '"label":"text"},"return_type":"entry","request_options":{"return_all_hits":true,"results_content_type":[' \
-            '"experimental"],"sort":[{"sort_by":"score","direction":"desc"}],"scoring_strategy":"combined"}}'
+    query = '{"query":{"type":"group","logical_operator":"or","nodes":[{"type":"terminal","service":"text"' \
+            ',"parameters":{"attribute":"struct.title","operator":"contains_phrase","negation":false,"value":' \
+            '"protein_name"}},{"type":"terminal","service":"text","parameters":{"attribute":' \
+            '"rcsb_polymer_entity.rcsb_macromolecular_names_combined.name","operator":"contains_phrase",' \
+            '"negation":false,"value":"protein_name"}},{"type":"terminal","label":"text","service":"text",' \
+            '"parameters":{"attribute":"rcsb_polymer_entity.rcsb_macromolecular_names_combined.name","operator":' \
+            '"contains_phrase","negation":false,"value":"protein_name"}}],"label":"text"},"return_type":"entry",' \
+            '"request_options":{"return_all_hits":true,"results_content_type":["experimental"],"sort":[{"sort_by":' \
+            '"score","direction":"desc"}],"scoring_strategy":"combined"}}'
 
     # replace protein name in query
-    query = query.replace("protein_name", protein.capitalize())
+    search = query.replace("protein_name", protein.capitalize())
     # send request
-    response = requests.get(str(PDB_search_url + query))
+    response = requests.get(str(PDB_search_url + search))
     # extract ids from response
     list_of_ids = extract_IDs_from_PDB(str(response.text))
     return list(list_of_ids)
@@ -116,14 +119,16 @@ def validate_PDB_IDs(list_of_PDB_IDs, protein):
                 # check if protein name is in title
                 match = next(filter(lambda x: protein in x, protein_file_dict["_struct.title"]), None)
                 if match:
-                    validated_ids.append((struct_id, match , protein_file_dict["_pdbx_database_status.recvd_initial_deposition_date"]) )
+                    validated_ids.append(
+                        (struct_id, match, protein_file_dict["_pdbx_database_status.recvd_initial_deposition_date"]))
                     # remove file
                     os.remove(str(f"{struct_id}.cif"))
                     continue
                 # check if protein name is in compound molecule
                 match = next(filter(lambda x: protein in x, protein_file_dict["_entity.pdbx_description"]), None)
                 if match:
-                    validated_ids.append((struct_id, match, protein_file_dict["_pdbx_database_status.recvd_initial_deposition_date"]))
+                    validated_ids.append(
+                        (struct_id, match, protein_file_dict["_pdbx_database_status.recvd_initial_deposition_date"]))
                     # remove file
                     os.remove(str(f"{struct_id}.cif"))
                     continue
@@ -132,16 +137,14 @@ def validate_PDB_IDs(list_of_PDB_IDs, protein):
                     # check if protein name is in synonym
                     match = next(filter(lambda x: protein in x, protein_file_dict["_entity_name_com.name"]), None)
                     if match:
-                        validated_ids.append((struct_id, match, protein_file_dict["_pdbx_database_status.recvd_initial_deposition_date"]))
+                        validated_ids.append((struct_id, match,
+                                              protein_file_dict["_pdbx_database_status.recvd_initial_deposition_date"]))
                         # remove file
                         os.remove(str(f"{struct_id}.cif"))
                         continue
                 # name not in file, remove file
                 os.remove(str(f"{struct_id}.cif"))
     return list(validated_ids)
-
-
-
 
 
 if __name__ == "__main__":
@@ -160,15 +163,18 @@ if __name__ == "__main__":
         PDB_IDs = PDB_search(str(protein_name_from_user))
         print(f'{protein_name_from_user} IDs on PDB: ' + f"{len(PDB_IDs)}")
         PDB_only = find_PDB_only(list(PDB_IDs), list(proteopedia_IDS))
+        print("PDB only IDs:")
+        for ID in PDB_only:
+            print(ID)
         if PDB_only:
-            valid_ids = validate_PDB_IDs(list(PDB_only), str(protein_name_from_user))
-            print(f'New valid {protein_name_from_user} IDs on PDB: ' + f"{len(valid_ids)}")
-            print(valid_ids)
+            # valid_ids = validate_PDB_IDs(list(PDB_only), str(protein_name_from_user))
+            # print(f'New valid {protein_name_from_user} IDs on PDB: ' + f"{len(valid_ids)}")
+            # print(valid_ids)
             # create csv file with columns ID, Title, date
             with open(f"{protein_name_from_user}_ID's.csv", "w", newline="") as f:
                 writer = csv.writer(f)
-                writer.writerow(["ID", "Title", "Release Date"])
-                writer.writerows(valid_ids)
+                writer.writerow(["ID"])
+                writer.writerows(PDB_only)
             # close file
             f.close()
         else:
