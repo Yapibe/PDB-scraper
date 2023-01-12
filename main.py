@@ -14,7 +14,7 @@ def get_user_input():
     if input_protein == "":
         return -1, -1
     proteopedia_url = input("Enter Proteopedia site url: ")
-    return str(input_protein), str(proteopedia_url)
+    return str(input_protein), str("https://proteopedia.org/wiki/index.php/" + "proteopedia_url")
 
 
 def extract_IDs_Proteopedia(html_text):
@@ -215,9 +215,7 @@ if __name__ == "__main__":
         PDB_IDs = PDB_search(str(protein_name_from_user))
         print(f'{protein_name_from_user} IDs on PDB: ' + f"{len(PDB_IDs)}")
         PDB_only = find_PDB_only(list(PDB_IDs), list(proteopedia_IDS))
-        print("PDB only IDs:")
-        for ID in PDB_only:
-            print(ID)
+        print("PDB only IDs: " + str(PDB_only))
         if PDB_only:
             # valid_ids = validate_PDB_IDs(list(PDB_only), str(protein_name_from_user))
             # print(f'New valid {protein_name_from_user} IDs on PDB: ' + f"{len(valid_ids)}")
