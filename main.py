@@ -14,7 +14,7 @@ def get_user_input():
     if input_protein == "":
         return -1, -1
     proteopedia_url = input("Enter Proteopedia site url: ")
-    return str(input_protein), str("https://proteopedia.org/wiki/index.php/" + "proteopedia_url")
+    return str(input_protein), str("https://proteopedia.org/wiki/index.php/" + proteopedia_url)
 
 
 def extract_IDs_Proteopedia(html_text):
